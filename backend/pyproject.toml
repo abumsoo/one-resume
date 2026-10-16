@@ -1,0 +1,21 @@
+[project]
+name = "one-resume-backend"
+version = "0.1.0"
+description = "Resume manager backend: CV bullet bank, tailored resumes, promote-back."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "python-multipart>=0.0.9",
+    "sqlalchemy>=2.0",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "httpx2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

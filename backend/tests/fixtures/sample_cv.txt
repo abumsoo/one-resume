@@ -1,0 +1,41 @@
+                                              Alex Rivera
+     alex.rivera@example.com | example.dev | github.com/example-alex | linkedin.com/in/example-alex
+
+Experience
+Co-founder, Paper Lantern Labs – Portland, OR​                                             June 2024 – May 2026
+●​ Built a full-stack journaling app that limits users to one entry per day (Next.js, TypeScript, Node.js,
+   PostgreSQL), reaching 40 users and 90 entries in live deployment (inkwell)
+●​ Recorded video tutorials on Rust command-line tools, editor setup with Neovim, and a live-streamed web
+   app build, gathering 8,000+ views
+Software Engineer, Brightline Consulting – Chicago, IL​                                   Jun 2020 – Apr 2023
+Healthcare client
+●​ Ported dozens of Ruby report jobs to TypeScript, unifying the codebase and adding Jest test coverage to
+    catch regressions across clinic data feeds
+●​ Built Playwright automations in TypeScript for 25+ regional clinics, extending appointment sync to
+    providers that the standard integrations couldn’t reach
+Logistics client
+●​ Implemented live shipment tracking with WebSockets, syncing real-time location overlays with the route
+    map for in-progress deliveries
+●​ Defined TypeScript interfaces for strict type checking of shipment events, route data, and driver records,
+    catching data format errors during development
+●​ Built responsive React components using ag-grid and custom hooks to adjust tables and layouts across
+    mobile, tablet, and desktop breakpoints
+Software Engineer Intern, Open Data Lab – Madison, WI​                                    Jan 2020 – Mar 2020
+●​ Wrote Python data extraction pipelines using Scrapy and Selenium, transforming scraped data into
+    structured TSV/CSV formats that fit predefined schemas for downstream analysis
+●​ Refactored single-purpose scrapers into a generic, reusable architecture that handles structural
+    differences across public data repositories
+
+Projects
+Puzzle game (Godot, C#) - tile tumble​                                                        Dec 2025
+●​ Developed a gravity-based tile matching system and chain combos to drive core gameplay mechanics
+
+Education
+MS Computer Science – Lakeside State University​                                        Aug 2018 – May 2020
+BA Mathematics – River Valley College​                                                  Aug 2014 – May 2018
+
+Skills
+Languages/frameworks: TypeScript, JavaScript, Python, Rust, C#, React, Next.js, Node.js, PostgreSQL
+Testing/tools/infrastructure: Jest, Playwright, REST APIs, Git, Docker, AWS, Godot
+AI-assisted development: Claude Code, Neovim
+

@@ -1,0 +1,60 @@
+<!doctype html>
+<!--
+  Fictional CV used as the importer's test fixture. It mirrors the layout of a
+  Google Docs export: right-aligned dates, "●" bullets with hanging indents,
+  client subheadings, and zero-width spaces. Regenerate with:
+    chromium-browser --headless --no-pdf-header-footer --print-to-pdf=sample_cv.pdf sample_cv.html
+    pdftotext -layout sample_cv.pdf sample_cv.txt
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: letter; margin: 0.6in 0.7in; }
+  body { font: 10.5pt Arial, sans-serif; margin: 0; }
+  .name { text-align: center; font-size: 16pt; }
+  .contact { text-align: center; }
+  h2 { font-size: 12pt; margin: 12pt 0 4pt; }
+  .role { display: flex; justify-content: space-between; margin-top: 4pt; }
+  .sub { margin-top: 2pt; }
+  .b { display: flex; }
+  .m { flex: none; width: 0.25in; }
+  p { margin: 0; }
+</style>
+</head>
+<body>
+<p class="name">Alex Rivera</p>
+<p class="contact">alex.rivera@example.com | example.dev | github.com/example-alex | linkedin.com/in/example-alex</p>
+
+<h2>Experience</h2>
+<div class="role"><span>Co-founder, Paper Lantern Labs – Portland, OR&#8203;</span><span>June 2024 – May 2026</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Built a full-stack journaling app that limits users to one entry per day (Next.js, TypeScript, Node.js, PostgreSQL), reaching 40 users and 90 entries in live deployment (inkwell)</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Recorded video tutorials on Rust command-line tools, editor setup with Neovim, and a live-streamed web app build, gathering 8,000+ views</span></div>
+
+<div class="role"><span>Software Engineer, Brightline Consulting – Chicago, IL&#8203;</span><span>Jun 2020 – Apr 2023</span></div>
+<p class="sub">Healthcare client</p>
+<div class="b"><span class="m">●&#8203;</span><span>Ported dozens of Ruby report jobs to TypeScript, unifying the codebase and adding Jest test coverage to catch regressions across clinic data feeds</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Built Playwright automations in TypeScript for 25+ regional clinics, extending appointment sync to providers that the standard integrations couldn’t reach</span></div>
+<p class="sub">Logistics client</p>
+<div class="b"><span class="m">●&#8203;</span><span>Implemented live shipment tracking with WebSockets, syncing real-time location overlays with the route map for in-progress deliveries</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Defined TypeScript interfaces for strict type checking of shipment events, route data, and driver records, catching data format errors during development</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Built responsive React components using ag-grid and custom hooks to adjust tables and layouts across mobile, tablet, and desktop breakpoints</span></div>
+
+<div class="role"><span>Software Engineer Intern, Open Data Lab – Madison, WI&#8203;</span><span>Jan 2020 – Mar 2020</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Wrote Python data extraction pipelines using Scrapy and Selenium, transforming scraped data into structured TSV/CSV formats that fit predefined schemas for downstream analysis</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Refactored single-purpose scrapers into a generic, reusable architecture that handles structural differences across public data repositories</span></div>
+
+<h2>Projects</h2>
+<div class="role"><span>Puzzle game (Godot, C#) - tile tumble&#8203;</span><span>Dec 2025</span></div>
+<div class="b"><span class="m">●&#8203;</span><span>Developed a gravity-based tile matching system and chain combos to drive core gameplay mechanics</span></div>
+
+<h2>Education</h2>
+<div class="role"><span>MS Computer Science – Lakeside State University&#8203;</span><span>Aug 2018 – May 2020</span></div>
+<div class="role"><span>BA Mathematics – River Valley College&#8203;</span><span>Aug 2014 – May 2018</span></div>
+
+<h2>Skills</h2>
+<p>Languages/frameworks: TypeScript, JavaScript, Python, Rust, C#, React, Next.js, Node.js, PostgreSQL</p>
+<p>Testing/tools/infrastructure: Jest, Playwright, REST APIs, Git, Docker, AWS, Godot</p>
+<p>AI-assisted development: Claude Code, Neovim</p>
+</body>
+</html>
