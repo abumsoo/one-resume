@@ -22,6 +22,13 @@ A tailored resume pulls bullets from the CV bank, and any wording you improve ca
 
 Read it as a loop: bullets go out to a resume, and improvements come back as new bullet versions.
 
+The app is two pages:
+
+- **Home:** an Upload CV button when no CV is on file; otherwise Edit resume, which opens the main resume, and Create new resume, which starts a tailored resume from the main one for a job application.
+- **Edit page:** one page for both the main resume and tailored ones. It lists the resume's sections (header, education, professional experience, projects, skills, or a custom section) as cards you click into to edit and drag to reorder, beside a live preview of the PDF output. The preview renders the same HTML template that export prints, so it matches the PDF except for page breaks.
+
+The main resume is the CV: editing it edits the bullet bank directly, and every text change is a new bullet version. Editing a tailored resume changes that resume only (which bullets it selects, their order, the section order, and wording overrides); its wording reaches the main resume only through promote.
+
 ## Data model
 
 A CV is a bank of bullets and a resume is a selection from it, so nothing is copied and each bullet is fixed in one place.
@@ -32,7 +39,8 @@ A CV is a bank of bullets and a resume is a selection from it, so nothing is cop
 | Role | section, raw heading, company, title, dates (as written), location, archived at | Belongs to the CV; archived roles are hidden from the bullet bank |
 | Bullet | text, role, optional subheading, skill tags, version | The atomic unit; every edit keeps history |
 | BulletVersion | bullet, text, source (import, edit, promote) | Every text a bullet has had |
-| Resume | name, target company, job description, template | One per application |
+| Section | name, kind (header, education, experience, projects, skills, custom), position | The ordered sections of the main resume; roles belong to a section. Not built yet: today a role holds its section as a name |
+| Resume | name, target company, job description, template, section order | One per application; its section order starts as a copy of the main resume's |
 | Selection | resume, bullet, order, override text (optional), base version | Picks a bullet; an override changes the wording for this resume only, and base version is the bullet version it was written against |
 | Export | resume, date, file path | A record of what was sent where |
 
@@ -48,7 +56,9 @@ Ships in the MVP:
 
 - Import the existing CV from PDF, and split it into roles and bullets
 - Bullet bank with skill tags and edit history
-- Create a resume: pick bullets, reorder, override wording, choose one template
+- Home page: upload a CV, edit the main resume, create a new resume
+- Edit page for the main resume and tailored ones: click a section to edit it, drag sections to reorder them, add custom sections, and see a live preview
+- Create a resume from the main one: pick bullets, reorder, override wording, one template
 - Promote an override back to the CV, with a diff
 - PDF export named `Resume_BumSooKim.pdf`, saved into a per-company folder, with an export log
 - An "overrides not yet promoted" view
@@ -78,14 +88,15 @@ TypeScript on the frontend and Python on the backend, which also suits the AI la
 
 ## Build plan
 
-Three weeks gets you a usable MVP, and three more add the AI layer and ship it. Each week assumes about 14-16 project hours.
+Four weeks gets you a usable MVP, and three more add the AI layer and ship it. Each week assumes about 14-16 project hours.
 
 1. **Week 1, data and import:** schema, CV import from PDF (text extracted with `pdftotext -layout`, which needs poppler installed) into roles and bullets, and the bullet bank with edit history. Delivered as the API plus a minimal bullet-bank page: upload a PDF, view roles and bullets, edit role fields (title, company, location, dates, and section for roles with a heading) and bullet text, and add skill tags by hand. Runs locally without sign-in. Done when your real CV loads and edits save.
-2. **Week 2, resumes and export:** select and reorder bullets, overrides, one template, and PDF export with the fixed file name and per-company folder.
-3. **Week 3, promote-back:** diff view, the promote action, and the "not yet promoted" list. Add single-user sign-in and Alembic migrations, then deploy it this week so you can use it from anywhere. Done when you have used it for a real application.
-4. **Week 4, AI picker and keyword gaps:** job description in, ranked bullets and gaps out, with diffs.
-5. **Week 5, rewording and guardrails:** reword suggestions, the new-fact check, and saved test job descriptions.
-6. **Week 6, ship:** harden the deployment, write a README with a short demo video, and document the design decisions.
+2. **Week 2, edit page:** the home page, and the edit page for the main resume: sections as cards, drag to reorder, header editing, custom sections, the one template, and the live preview.
+3. **Week 3, tailored resumes and export:** Create new resume, select and reorder bullets, overrides, and PDF export with the fixed file name and per-company folder.
+4. **Week 4, promote-back:** diff view, the promote action, and the "not yet promoted" list. Add single-user sign-in and Alembic migrations, then deploy it this week so you can use it from anywhere. Done when you have used it for a real application.
+5. **Week 5, AI picker and keyword gaps:** job description in, ranked bullets and gaps out, with diffs.
+6. **Week 6, rewording and guardrails:** reword suggestions, the new-fact check, and saved test job descriptions.
+7. **Week 7, ship:** harden the deployment, write a README with a short demo video, and document the design decisions.
 
 ## Risks and how to present it
 
@@ -101,6 +112,11 @@ Decided: you will import your CV from PDFs in the MVP, but will eventually want 
 Also decided: re-importing a CV matches the new roles and bullets to the current ones, and for each matched bullet asks whether to replace the old bullet (new version, keeping its history, tags, and resume selections), merge the two texts, or add it as a new bullet (and then whether to archive the old bullet or keep both in the bullet bank). Old roles and bullets that nothing matched are archived, never deleted, so existing resumes keep them. Skill tags are added by hand for now.
 
 On your own resume, a line like "Built a resume manager with a bullet-level source of truth and LLM-assisted tailoring" works if you can then walk through the data model, the guardrails, and how you tested suggestions.
+
+## Open questions
+
+- What else the home page shows, for example a list of tailored resumes and their exports.
+- Whether a custom section needs adding new roles and bullets by hand, which is in the backlog today.
 
 ## Backlog
 
