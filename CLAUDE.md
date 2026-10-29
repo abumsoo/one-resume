@@ -39,7 +39,9 @@ Frontend, from `frontend/`:
   into roles and bullets, `routes.py` the API. `auth.py` (sign-in) comes in Week 4.
 - `frontend/src/`: React app, routed with `react-router`. `pages/` holds the home and
   edit pages; `App.tsx` the routes (`AppRoutes` is exported so tests can render it in
-  a `MemoryRouter`). `api.ts` holds typed calls mirroring
+  a `MemoryRouter`). Routes are client-side, so whatever serves the built frontend
+  must answer unknown non-`/api` paths with `index.html` (Vite's dev server already
+  does). `api.ts` holds typed calls mirroring
   `backend/app/schemas.py`; `components/` the UI pieces. Tests mock `api.ts`.
 - `backend/tests/`: pytest. Tests use a fresh SQLite file per test.
 - `backend/tests/fixtures/`: a fictional CV (`sample_cv.html`, printed to

@@ -80,7 +80,7 @@ describe('EditResume', () => {
       .getAllByRole('button', { expanded: false })
       .map((b) => b.textContent)
     expect(names).toEqual(['Header', 'Experience', 'Skills'])
-    expect(screen.queryByText('Built a thing')).not.toBeInTheDocument()
+    expect(screen.getByText('Built a thing')).not.toBeVisible()
     expect(screen.getByRole('complementary', { name: 'Preview' })).toBeInTheDocument()
   })
 
@@ -88,14 +88,44 @@ describe('EditResume', () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
     renderPage()
     await openSection('Header')
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument()
+    expect(screen.getByText('Jane Doe')).toBeVisible()
 
     await openSection('Experience')
-    expect(screen.getByText('Built a thing')).toBeInTheDocument()
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
+    expect(screen.getByText('Built a thing')).toBeVisible()
+    expect(screen.getByText('Jane Doe')).not.toBeVisible()
 
     await openSection('Experience')
-    expect(screen.queryByText('Built a thing')).not.toBeInTheDocument()
+    expect(screen.getByText('Built a thing')).not.toBeVisible()
+  })
+
+  it('keeps an unsaved draft when its section is closed and reopened', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.type(screen.getByLabelText('Bullet text'), ' twice')
+
+    await openSection('Skills')
+    await openSection('Experience')
+    expect(screen.getByLabelText('Bullet text')).toHaveValue('Built a thing twice')
+  })
+
+  it('keeps a role in view when it moves to another section', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    vi.mocked(api.updateRole).mockResolvedValue({ ...job, section: 'Work' })
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit role' }))
+    const section = screen.getByLabelText('Section')
+    await userEvent.clear(section)
+    await userEvent.type(section, 'Work')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('button', { name: 'Work' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByText('Built a thing')).toBeVisible()
   })
 
   it('links back home when there is no CV', async () => {
@@ -126,7 +156,7 @@ describe('EditResume', () => {
     vi.mocked(api.updateBullet).mockResolvedValue({ ...bullet, tags: ['python'] })
     renderPage()
     await openSection('Experience')
-    await userEvent.type(screen.getByLabelText('New tag'), 'python{Enter}')
+    await userEvent.type(screen.getByRole('textbox', { name: 'New tag' }), 'python{Enter}')
     expect(api.updateBullet).toHaveBeenCalledWith(1, { tags: ['python'] })
     expect(await screen.findByRole('button', { name: 'Remove tag python' })).toBeInTheDocument()
   })

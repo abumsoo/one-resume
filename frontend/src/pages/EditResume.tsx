@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getCv, type Bullet, type Cv, type Role } from '../api'
 import RoleCard from '../components/RoleCard'
@@ -11,6 +11,8 @@ export default function EditResume() {
   const [cv, setCv] = useState<Cv | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // The open card's id; one is open at a time, null when all are closed.
+  const [open, setOpen] = useState<string | null>(null)
 
   useEffect(() => {
     getCv()
@@ -30,6 +32,8 @@ export default function EditResume() {
   function replaceRoleFields(saved: Role) {
     // Keep the bullets in state; a bullet save may have landed since.
     mapRole(saved.id, (role) => ({ ...saved, bullets: role.bullets }))
+    // A role moved to another section: follow it there, so it stays in view.
+    setOpen(sectionId(saved.section))
   }
 
   function replaceBullet(saved: Bullet) {
@@ -46,7 +50,13 @@ export default function EditResume() {
       {error && <p className="error">{error}</p>}
       {cv ? (
         <>
-          <SectionList cv={cv} onRoleChange={replaceRoleFields} onBulletChange={replaceBullet} />
+          <SectionList
+            cv={cv}
+            open={open}
+            onToggle={(id) => setOpen(open === id ? null : id)}
+            onRoleChange={replaceRoleFields}
+            onBulletChange={replaceBullet}
+          />
           <aside className="preview" aria-label="Preview">
             <p className="muted">Preview comes in a later feature.</p>
           </aside>
@@ -62,15 +72,20 @@ export default function EditResume() {
   )
 }
 
+function sectionId(section: string): string {
+  return `section:${section}`
+}
+
 interface SectionListProps {
   cv: Cv
+  open: string | null
+  onToggle: (id: string) => void
   onRoleChange: (role: Role) => void
   onBulletChange: (bullet: Bullet) => void
 }
 
-function SectionList({ cv, onRoleChange, onBulletChange }: SectionListProps) {
-  // One section is open at a time; null when all are closed.
-  const [open, setOpen] = useState<string | null>(null)
+function SectionList({ cv, open, onToggle, onRoleChange, onBulletChange }: SectionListProps) {
+  const idPrefix = useId()
 
   // Group roles by section, keeping the order they appear in the CV.
   const sections = new Map<string, Role[]>()
@@ -80,18 +95,24 @@ function SectionList({ cv, onRoleChange, onBulletChange }: SectionListProps) {
 
   function card(id: string, name: string, body: ReactNode) {
     const isOpen = open === id
+    const bodyId = `${idPrefix}-${id}`
     return (
       <section key={id} className="section-card">
         <h2>
           <button
             type="button"
             aria-expanded={isOpen}
-            onClick={() => setOpen(isOpen ? null : id)}
+            aria-controls={bodyId}
+            onClick={() => onToggle(id)}
           >
             {name}
           </button>
         </h2>
-        {isOpen && body}
+        {/* Hidden, not unmounted, so closing a card keeps unsaved drafts and
+            in-flight saves in the editors inside it. */}
+        <div id={bodyId} hidden={!isOpen}>
+          {body}
+        </div>
       </section>
     )
   }
@@ -113,7 +134,7 @@ function SectionList({ cv, onRoleChange, onBulletChange }: SectionListProps) {
       )}
       {[...sections].map(([section, roles]) =>
         card(
-          `section:${section}`,
+          sectionId(section),
           section,
           roles.map((role) => (
             <RoleCard
