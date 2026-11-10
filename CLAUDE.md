@@ -6,9 +6,12 @@ for scope and the build plan; read it before planning a feature.
 
 ## Status
 
-Week 1 (data, PDF import, bullet bank) is built. A second import returns 409 until
-re-import with matching is built; during development, delete `backend/one_resume.db`
-to start over.
+Week 1 (data, PDF import, bullet bank) is built. The frontend is two pages: home
+(`/`: upload a CV, Edit resume, Create new resume, which is disabled until Week 3) and
+the edit page (`/edit`: the main resume's sections as cards that open to edit, and a
+placeholder for the preview). Drag to reorder and the preview come in Week 2. A
+second import returns 409 until re-import with matching is built; during
+development, delete `backend/one_resume.db` to start over.
 
 ## Commands
 
@@ -17,7 +20,7 @@ Backend, from `backend/`:
 - Install: `uv sync`
 - Test: `uv run pytest`
 - Run: `uv run uvicorn --factory app.main:create_app` (port 8000; the database is
-  `ONE_RESUME_DATABASE_URL`, default `sqlite:///./one_resume.db`). From Week 3, when
+  `ONE_RESUME_DATABASE_URL`, default `sqlite:///./one_resume.db`). From Week 4, when
   sign-in is added, it needs `ONE_RESUME_SECRET_KEY` and `ONE_RESUME_PASSWORD_HASH`
   (`python -m app.auth` generates the hash).
 - System dependency: `pdftotext` from poppler (`poppler-utils` on Debian/Fedora),
@@ -33,8 +36,12 @@ Frontend, from `frontend/`:
 
 - `backend/app/`: FastAPI app, all routes under `/api`. `models.py` is the data model,
   `pdf.py` turns a PDF into text (`pdftotext -layout`), `importer.py` splits CV text
-  into roles and bullets, `routes.py` the API. `auth.py` (sign-in) comes in Week 3.
-- `frontend/src/`: React app. `api.ts` holds typed calls mirroring
+  into roles and bullets, `routes.py` the API. `auth.py` (sign-in) comes in Week 4.
+- `frontend/src/`: React app, routed with `react-router`. `pages/` holds the home and
+  edit pages; `App.tsx` the routes (`AppRoutes` is exported so tests can render it in
+  a `MemoryRouter`). Routes are client-side, so whatever serves the built frontend
+  must answer unknown non-`/api` paths with `index.html` (Vite's dev server already
+  does). `api.ts` holds typed calls mirroring
   `backend/app/schemas.py`; `components/` the UI pieces. Tests mock `api.ts`.
 - `backend/tests/`: pytest. Tests use a fresh SQLite file per test.
 - `backend/tests/fixtures/`: a fictional CV (`sample_cv.html`, printed to
@@ -48,7 +55,7 @@ Frontend, from `frontend/`:
 ## Data model
 
 The full model, including `Export`, is the table in `SPEC.md`; this list adds detail.
-`Resume`, `Selection`, and `Export` are not built yet (Week 2).
+`Section`, `Resume`, `Selection`, and `Export` are not built yet (Weeks 2-3).
 
 - `CvImport`: the original text of an import and its header (name, contact).
 - `Role`: an entry in a CV section (job, project, degree): section, raw heading,
@@ -58,7 +65,11 @@ The full model, including `Export`, is the table in `SPEC.md`; this list adds de
 - `Bullet`: text, optional subheading (e.g. "Healthcare client"), tags, version.
 - `BulletVersion`: every text a bullet has had, with its source
   (`import`, `edit`, `promote`).
-- `Resume`: name, target company, job description, template.
+- `Section`: the ordered sections of the main resume (header, education, experience,
+  projects, skills, custom). Until it is built, a role holds its section as a name and
+  sections show in the order of their first role.
+- `Resume`: name, target company, job description, template, its own section order
+  (copied from the main resume when created).
 - `Selection`: a resume's pick of a bullet: position, optional override text, and
   `base_version`, the bullet version the override was written against.
 
@@ -72,7 +83,7 @@ The full model, including `Export`, is the table in `SPEC.md`; this list adds de
   Don't assign `bullet.text` directly.
 - Import must not lose text: keep the raw heading on each role and the raw input on
   `CvImport`, so a bad split can be fixed by hand.
-- AI features (weeks 4-5) may only select or reword existing bullets, never add facts,
+- AI features (weeks 5-6) may only select or reword existing bullets, never add facts,
   and every suggestion is shown as a diff before it is applied.
 
 ## Decisions

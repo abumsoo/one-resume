@@ -1,14 +1,14 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as api from './api'
-import type { Bullet, Cv, Role } from './api'
-import App from './App'
+import * as api from '../api'
+import type { Bullet, Cv, Role } from '../api'
+import { AppRoutes } from '../App'
 
-vi.mock('./api', async (importOriginal) => ({
+vi.mock('../api', async (importOriginal) => ({
   ...(await importOriginal<typeof api>()),
   getCv: vi.fn(),
-  importPdf: vi.fn(),
   updateRole: vi.fn(),
   updateBullet: vi.fn(),
   getBulletVersions: vi.fn(),
@@ -58,32 +58,89 @@ beforeEach(() => {
   vi.resetAllMocks()
 })
 
-describe('App', () => {
-  it('shows the upload form before any CV exists', async () => {
-    vi.mocked(api.getCv).mockResolvedValue(null)
-    render(<App />)
-    expect(await screen.findByText(/No CV yet/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled()
+function renderPage() {
+  render(
+    <MemoryRouter initialEntries={['/edit']}>
+      <AppRoutes />
+    </MemoryRouter>,
+  )
+}
+
+/** Opens a section card by its name, once the page has loaded. */
+async function openSection(name: string) {
+  await userEvent.click(await screen.findByRole('button', { name }))
+}
+
+describe('EditResume', () => {
+  it('lists the header first, then the sections, all closed', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    renderPage()
+    await screen.findByRole('button', { name: 'Header' })
+    const names = screen
+      .getAllByRole('button', { expanded: false })
+      .map((b) => b.textContent)
+    expect(names).toEqual(['Header', 'Experience', 'Skills'])
+    expect(screen.getByText('Built a thing')).not.toBeVisible()
+    expect(screen.getByRole('complementary', { name: 'Preview' })).toBeInTheDocument()
   })
 
-  it('imports a PDF and shows the bullet bank', async () => {
+  it('opens one section at a time, and closes it on a second click', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    renderPage()
+    await openSection('Header')
+    expect(screen.getByText('Jane Doe')).toBeVisible()
+
+    await openSection('Experience')
+    expect(screen.getByText('Built a thing')).toBeVisible()
+    expect(screen.getByText('Jane Doe')).not.toBeVisible()
+
+    await openSection('Experience')
+    expect(screen.getByText('Built a thing')).not.toBeVisible()
+  })
+
+  it('keeps an unsaved draft when its section is closed and reopened', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.type(screen.getByLabelText('Bullet text'), ' twice')
+
+    await openSection('Skills')
+    await openSection('Experience')
+    expect(screen.getByLabelText('Bullet text')).toHaveValue('Built a thing twice')
+  })
+
+  it('keeps a role in view when it moves to another section', async () => {
+    vi.mocked(api.getCv).mockResolvedValue(cv)
+    vi.mocked(api.updateRole).mockResolvedValue({ ...job, section: 'Work' })
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit role' }))
+    const section = screen.getByLabelText('Section')
+    await userEvent.clear(section)
+    await userEvent.type(section, 'Work')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('button', { name: 'Work' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByText('Built a thing')).toBeVisible()
+  })
+
+  it('links back home when there is no CV', async () => {
     vi.mocked(api.getCv).mockResolvedValue(null)
-    vi.mocked(api.importPdf).mockResolvedValue(cv)
-    render(<App />)
-    const file = new File(['%PDF'], 'cv.pdf', { type: 'application/pdf' })
-    await userEvent.upload(await screen.findByLabelText(/CV \(PDF\)/), file)
-    await userEvent.click(screen.getByRole('button', { name: 'Import' }))
-    expect(api.importPdf).toHaveBeenCalledWith(file)
-    expect(await screen.findByText('Built a thing')).toBeInTheDocument()
+    renderPage()
+    expect(await screen.findByRole('link', { name: 'Import one' })).toHaveAttribute('href', '/')
   })
 
   it('saves an edited bullet and shows its new version', async () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
     vi.mocked(api.updateBullet).mockResolvedValue({ ...bullet, text: 'Shipped a thing', version: 2 })
-    render(<App />)
-    await screen.findByText('Built a thing')
+    renderPage()
+    await openSection('Experience')
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const box = screen.getByLabelText('Bullet text')
     await userEvent.clear(box)
     await userEvent.type(box, 'Shipped a thing')
@@ -97,8 +154,9 @@ describe('App', () => {
   it('adds a tag', async () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
     vi.mocked(api.updateBullet).mockResolvedValue({ ...bullet, tags: ['python'] })
-    render(<App />)
-    await userEvent.type((await screen.findAllByLabelText('New tag'))[0], 'python{Enter}')
+    renderPage()
+    await openSection('Experience')
+    await userEvent.type(screen.getByRole('textbox', { name: 'New tag' }), 'python{Enter}')
     expect(api.updateBullet).toHaveBeenCalledWith(1, { tags: ['python'] })
     expect(await screen.findByRole('button', { name: 'Remove tag python' })).toBeInTheDocument()
   })
@@ -106,14 +164,15 @@ describe('App', () => {
   it('edits a role with a heading, but not a section without one', async () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
     vi.mocked(api.updateRole).mockResolvedValue({ ...job, title: 'Staff Engineer' })
-    render(<App />)
-    await screen.findByText('Languages: Python')
+    renderPage()
 
-    // Only the job has an "Edit role" button; Skills has no heading to edit.
-    const editButtons = screen.getAllByRole('button', { name: 'Edit role' })
-    expect(editButtons).toHaveLength(1)
+    // Skills has no heading to edit, so no "Edit role" button.
+    await openSection('Skills')
+    expect(screen.getByText('Languages: Python')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit role' })).not.toBeInTheDocument()
 
-    await userEvent.click(editButtons[0])
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit role' }))
     const title = screen.getByLabelText('Title')
     await userEvent.clear(title)
     await userEvent.type(title, 'Staff Engineer')
@@ -133,8 +192,9 @@ describe('App', () => {
   it('shows API errors inline', async () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
     vi.mocked(api.updateBullet).mockRejectedValue(new Error('Bullet 1 not found'))
-    render(<App />)
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Edit' }))[0])
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Bullet 1 not found')).toBeInTheDocument()
   })
@@ -146,8 +206,8 @@ describe('App', () => {
     vi.mocked(api.updateBullet).mockImplementation(
       (id) => new Promise((resolve) => pending.set(id, resolve)),
     )
-    render(<App />)
-    await screen.findByText('Fixed a bug')
+    renderPage()
+    await openSection('Experience')
 
     for (const [old, edited] of [
       ['Built a thing', 'Built A'],
@@ -174,8 +234,9 @@ describe('App', () => {
     vi.mocked(api.updateBullet).mockImplementation(
       () => new Promise((resolve) => (finish = resolve)),
     )
-    render(<App />)
-    const input = (await screen.findAllByLabelText('New tag'))[0]
+    renderPage()
+    await openSection('Experience')
+    const input = screen.getAllByLabelText('New tag')[0]
     await userEvent.type(input, 'python{Enter}')
     expect(input).toBeDisabled()
 
@@ -186,8 +247,9 @@ describe('App', () => {
 
   it('refuses to save an empty section', async () => {
     vi.mocked(api.getCv).mockResolvedValue(cv)
-    render(<App />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit role' }))
+    renderPage()
+    await openSection('Experience')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit role' }))
     await userEvent.clear(screen.getByLabelText('Section'))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(screen.getByText("Section can't be empty")).toBeInTheDocument()
