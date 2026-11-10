@@ -115,7 +115,6 @@ On your own resume, a line like "Built a resume manager with a bullet-level sour
 
 ## Open questions
 
-- What else the home page shows, for example a list of tailored resumes and their exports.
 - Whether a custom section needs adding new roles and bullets by hand, which is in the backlog today.
 
 ## Backlog
@@ -127,3 +126,4 @@ Ideas that are out of the current scope, kept here so they don't creep in:
 - Seed skill tags from the CV's Skills section
 - Import from Word, Google Docs, and plain text
 - Re-import with bullet matching (behaviour decided above; not yet scheduled in a week)
+- Resumes dashboard: a page (or the home page grown into a dashboard) listing every tailored resume with its job's title and company, and for each resume the jobs it was used for. A resume used for several jobs means a separate job/application entity linked to Resume, instead of Resume holding one target company and job description

@@ -3,8 +3,9 @@ import { Link } from 'react-router'
 import { getCv, type Bullet, type Cv, type Role } from '../api'
 import RoleCard from '../components/RoleCard'
 
-// The header's card id; section cards use the section name, prefixed so a
-// section named "Header" can't clash with it.
+// Which card is open is one string, so the header and the sections share an id
+// space. Section ids are the section name with a prefix (sectionId), so a CV
+// section that is itself named "header" can't open the header card too.
 const HEADER = 'header'
 
 export default function EditResume() {
@@ -85,44 +86,16 @@ interface SectionListProps {
 }
 
 function SectionList({ cv, open, onToggle, onRoleChange, onBulletChange }: SectionListProps) {
-  const idPrefix = useId()
-
   // Group roles by section, keeping the order they appear in the CV.
   const sections = new Map<string, Role[]>()
   for (const role of cv.roles) {
     sections.set(role.section, [...(sections.get(role.section) ?? []), role])
   }
 
-  function card(id: string, name: string, body: ReactNode) {
-    const isOpen = open === id
-    const bodyId = `${idPrefix}-${id}`
-    return (
-      <section key={id} className="section-card">
-        <h2>
-          <button
-            type="button"
-            aria-expanded={isOpen}
-            aria-controls={bodyId}
-            onClick={() => onToggle(id)}
-          >
-            {name}
-          </button>
-        </h2>
-        {/* Hidden, not unmounted, so closing a card keeps unsaved drafts and
-            in-flight saves in the editors inside it. */}
-        <div id={bodyId} hidden={!isOpen}>
-          {body}
-        </div>
-      </section>
-    )
-  }
-
   return (
     <div className="sections">
       {/* The header isn't editable yet; it comes with the edit page work in Week 2. */}
-      {card(
-        HEADER,
-        'Header',
+      <SectionCard name="Header" isOpen={open === HEADER} onToggle={() => onToggle(HEADER)}>
         <div className="cv-header">
           {cv.header
             .split('\n')
@@ -130,22 +103,55 @@ function SectionList({ cv, open, onToggle, onRoleChange, onBulletChange }: Secti
             .map((line, i) => (
               <p key={i}>{line}</p>
             ))}
-        </div>,
-      )}
-      {[...sections].map(([section, roles]) =>
-        card(
-          sectionId(section),
-          section,
-          roles.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              onRoleChange={onRoleChange}
-              onBulletChange={onBulletChange}
-            />
-          )),
-        ),
-      )}
+        </div>
+      </SectionCard>
+      {[...sections].map(([section, roles]) => {
+        const id = sectionId(section)
+        return (
+          <SectionCard
+            key={id}
+            name={section}
+            isOpen={open === id}
+            onToggle={() => onToggle(id)}
+          >
+            {roles.map((role) => (
+              <RoleCard
+                key={role.id}
+                role={role}
+                onRoleChange={onRoleChange}
+                onBulletChange={onBulletChange}
+              />
+            ))}
+          </SectionCard>
+        )
+      })}
     </div>
+  )
+}
+
+interface SectionCardProps {
+  name: string
+  isOpen: boolean
+  onToggle: () => void
+  children: ReactNode
+}
+
+// One collapsible card. It knows nothing about the CV: the list decides what
+// goes inside and which card is open.
+function SectionCard({ name, isOpen, onToggle, children }: SectionCardProps) {
+  const bodyId = useId()
+  return (
+    <section className="section-card">
+      <h2>
+        <button type="button" aria-expanded={isOpen} aria-controls={bodyId} onClick={onToggle}>
+          {name}
+        </button>
+      </h2>
+      {/* Hidden, not unmounted, so closing a card keeps unsaved drafts and
+          in-flight saves in the editors inside it. */}
+      <div id={bodyId} hidden={!isOpen}>
+        {children}
+      </div>
+    </section>
   )
 }
